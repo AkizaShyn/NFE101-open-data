@@ -28,5 +28,12 @@ sudo make logs
 
 # Lister les topic 
 ```bash
-/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+make list_topic
+```
+
+# insérer une donnée 
+```bash
+# entrer dans le shell de kafka
+make message_shell
+# Puis coller le message que l'on souhaite envoyer via le data/messages.jsonl
 ```
