@@ -34,3 +34,9 @@ pull:
 logs:
 	$(DOCKER_COMMAND) logs -f --tail=100
 
+list_topic:
+	docker exec -it ct-kafka bash /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+
+message_shell:
+	docker exec -it ct-kafka bash /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka:9092 --topic velib-stations
+
