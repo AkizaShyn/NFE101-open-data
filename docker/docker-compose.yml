@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ct-mysql
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: velib
+      MYSQL_USER: velib
+      MYSQL_PASSWORD: velib
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uvelib", "-pvelib"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: ct-kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft mode (no ZooKeeper)
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      # Listeners
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      # Single node dev settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    restart: unless-stopped
+
+  consumer:
+    build:
+      context: ../images/consumer
+    container_name: ct-consumer
+    hostname: consumer
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      KAFKA_TOPIC: "velib-stations"
+      KAFKA_GROUP_ID: "velib-consumer"
+      MYSQL_HOST: "mysql"
+      MYSQL_PORT: "3306"
+      MYSQL_DB: "velib"
+      MYSQL_USER: "velib"
+      MYSQL_PASSWORD: "velib"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: ct-pma
+    hostname: pma
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS="mysql"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  cleaner:
+    build:
+      context: ../images/cleaner
+    container_name: ct-cleaner
+    hostname: cleaner
+    volumes:
+      - ../data:/data
+    environment:
+      RAW_URL: "https://www.data.gouv.fr/api/1/datasets/r/0845c838-6f18-40c3-936f-da204107759a"
+      RAW_PATH: "/data/raw.csv"
+      CLEANED_PATH: "/data/cleaned.csv"
+      JSONL_PATH: "/data/messages.jsonl"
+
+volumes:
+  mysql_data:
+  kafka_data:
