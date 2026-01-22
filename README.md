@@ -35,5 +35,6 @@ make list_topic
 ```bash
 # entrer dans le shell de kafka
 make message_shell
-# Puis coller le message que l'on souhaite envoyer via le data/messages.jsonl
+# Puis coller le message que l'on souhaite envoyer via le data/messages.jsonl par exemple
+{"station_code": "16107", "name": "Benjamin Godard - Victor Hugo", "is_installed": 1, "capacity": 35, "numdocksavailable": 31, "numbikesavailable": 4, "mechanical": 3, "ebike": 1, "is_returning": 1, "due_date": "2026-01-22T09:16:34+00:00", "commune": "Paris", "code_insee": "75056", "geo": "48.865983, 2.275725"}
 ```
